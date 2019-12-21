@@ -95,7 +95,7 @@ case class Tabulation[Row](headings: Heading[Row]*) {
 
   def padding: Int = 2
 
-  def tabulate(maxWidth: Int, rows: Seq[Row], ansi: Option[String]): Seq[String] = {
+  def tabulate(maxWidth: Int, rows: Seq[Row], ansi: Option[String] = None): Seq[String] = {
     val reset = ansi.fold("") { _ => Ansi.reset }
     val titleStrings = headings.to[List].map { h => List(h.name) }
     
