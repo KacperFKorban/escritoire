@@ -117,7 +117,7 @@ case class Tabulation[Row](headings: Heading[Row]*) {
     val hr      = if(tight) Nil else List(rule('╟', '─', '┼', '╢'))
     val endHr   = if(tight) rule('└', '─', '┴', '┘') else rule('╚', '═', '╧', '╝')
     val startHr = if(tight) rule('┌', '─', '┬', '┐') else rule('╔', '═', '╤', '╗')
-    val midHr   = if(tight) rule('├', '─', '┼', '┤') else rule('╠', '═', '╪', '╢')
+    val midHr   = if(tight) rule('├', '─', '┼', '┤') else rule('╠', '═', '╪', '╣')
 
     val totalWidth = maxWidths.sum + maxWidths.length * padding
     val flexibleWidths = headings.filter(_.width == FlexibleWidth).size
