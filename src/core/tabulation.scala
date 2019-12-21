@@ -95,21 +95,29 @@ case class Tabulation[Row](headings: Heading[Row]*) {
 
   def padding: Int = 2
 
-  def tabulate(maxWidth: Int, rows: Seq[Row]): Seq[String] = {
+  def tabulate(maxWidth: Int, rows: Seq[Row], ansi: Option[String] = None): Seq[String] = {
+    val reset = ansi.fold("") { _ => Ansi.reset }
     val titleStrings = headings.to[List].map { h => List(h.name) }
     
-    val data: Seq[List[List[String]]] = titleStrings.map(_.map(Ansi.underline(_))) +: (rows.map { row =>
+    val data: Seq[List[List[String]]] = titleStrings.map(_.map(Ansi.bold(_))) +: (rows.map { row =>
       headings.to[List].map { _.get(row).split("\n").to[List] }
     })
 
     val tight = !data.exists(_.exists(_.length > 1))
 
-    val paddedData = if(!tight) data.map(_.map("" :: _)) else data
-
-    val maxWidths = paddedData.foldLeft(Vector.fill(headings.size)(0)) {
+    val maxWidths: Vector[Int] = data.foldLeft(Vector.fill(headings.size)(0)) {
       case (widths, next) =>
         widths.zip(next).map { case (w, xs) => xs.map { c => Ansi.strip(c).length }.max max w }
     }
+
+
+    def rule(left: Char, mid: Char, cross: Char, right: Char) =
+      maxWidths.map { w => s"$mid"*(w + 2) }.mkString(s"${ansi.getOrElse("")}$left", s"$cross", s"$right${reset}")
+    
+    val hr      = if(tight) Nil else List(rule('╟', '─', '┼', '╢'))
+    val endHr   = if(tight) rule('└', '─', '┴', '┘') else rule('╚', '═', '╧', '╝')
+    val startHr = if(tight) rule('┌', '─', '┬', '┐') else rule('╔', '═', '╤', '╗')
+    val midHr   = if(tight) rule('├', '─', '┼', '┤') else rule('╠', '═', '╪', '╣')
 
     val totalWidth = maxWidths.sum + maxWidths.length * padding
     val flexibleWidths = headings.filter(_.width == FlexibleWidth).size
@@ -139,31 +147,25 @@ case class Tabulation[Row](headings: Heading[Row]*) {
         }
     }
 
-    paddedData.flatMap { cells =>
-      cells
-        .zip(widths)
-        .zip(headings)
-        .map {
-          case ((lines, width), heading) =>
-            lines.padTo(cells.map(_.length).max, "").map(pad(_, width, heading.align))
-        }
-        .transpose
-        .map(_.mkString(" " * padding))
-    } ++ (if(tight) Nil else List(""))
+    List(startHr) ++ data.flatMap { cells =>
+      hr ++ cells.zip(widths).zip(headings).map { case ((lines, width), heading) =>
+        lines.padTo(cells.map(_.length).max, "").map(pad(_, width, heading.align, reset))
+      }.transpose.map(_.mkString(s"${ansi.getOrElse("")}${if(tight) "│" else "║"}${reset} ", s" ${ansi.getOrElse("")}│${reset} ", s" ${ansi.getOrElse("")}${if(tight) "│" else "║"}${reset}"))
+    }.drop(if(tight) 0 else 1).patch(1, List(midHr), if(tight) 0 else 1) ++ List(endHr)
   }
 
-  private def pad(str: String, width: Int, alignment: Alignment): String = {
+  private def pad(str: String, width: Int, alignment: Alignment, reset: String): String = {
     val stripped = Ansi.strip(str).length
     alignment match {
       case LeftAlign =>
-        if (stripped > width) str.dropRight(stripped - width)+Ansi.reset
+        if (stripped > width) str.dropRight(stripped - width)+reset
         else str + (" " * (width - stripped))
       case RightAlign =>
-        if (stripped > width) str.drop(stripped - width)+Ansi.reset
+        if (stripped > width) str.drop(stripped - width)+reset
         else (" " * (width - stripped)) + str
       case CenterAlign =>
-        if (stripped > width) pad(str.drop((stripped - width) / 2), width, LeftAlign)+Ansi.reset
-        else pad(str+" "*((width - stripped)/2), width, RightAlign)
+        if (stripped > width) pad(str.drop((stripped - width) / 2), width, LeftAlign, reset)+reset
+        else pad(str+" "*((width - stripped)/2), width, RightAlign, reset)
     }
   }
 }
