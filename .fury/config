@@ -1,0 +1,14 @@
+# This is a Fury configuration file. It contains significant
+# whitespace and is not intended to be human-editable.
+#
+# To start using Fury with this project, install Fury and run,
+#
+#   fury layer init
+#
+# For more information, please visit https://propensive.com/fury/
+#
+layerRef	QmVfbbjWncJzS3jxfiN9AU6L5x1BsriM2qFpKfAp7X8rBn
+published	Some	url	fury://furore.dev/propensive/escritoire
+		version	1.3
+		layerRef	QmYhPx4v5tZxMHWDdvTJSK1PFpzo4qncsn2B2WwMpUBKTe
+# vim: set noai ts=12 sw=12:
